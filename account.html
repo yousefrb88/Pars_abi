@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>حساب کاربری | پارس آبی</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="assets/css/style.css?v=20">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%230b6ad4'/%3E%3Cpath d='M12 4c3 3.5 5 6 5 8.5a5 5 0 0 1-10 0C7 10 9 7.5 12 4z' fill='white'/%3E%3C/svg%3E">
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main>
+  <div id="pageHead"></div>
+
+  <section class="section" style="padding-top:38px" id="acctSection">
+    <div class="wrap" id="acctWrap"></div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="assets/js/data.js?v=20"></script>
+<script src="assets/js/app.js?v=20"></script>
+<script>
+  initCommon();
+
+  const wrap = document.getElementById('acctWrap');
+  const params = new URLSearchParams(location.search);
+  const nextUrl = params.get('next') || '';
+
+  /* ---------- اعتبارسنجی ---------- */
+  const isEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v).trim());
+  const normPhone = v => String(v || '').replace(/[\s-]/g, '');
+  const isPhone = v => /^0?9\d{9}$/.test(normPhone(v));
+
+  function setErr(inputId, msg) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const field = input.closest('.field');
+    field.classList.add('has-err');
+    const err = field.querySelector('.field__err');
+    if (err) err.textContent = msg;
+  }
+  function clearErrs(scope) {
+    (scope || wrap).querySelectorAll('.field.has-err').forEach(f => f.classList.remove('has-err'));
+  }
+
+  /* ---------- اگر وارد شده: داشبورد ---------- */
+  const sess = Store.session();
+  if (sess) {
+    renderDashboard(sess);
+  } else {
+    renderAuth();
+  }
+
+  /* ==========================================================
+     ورود / ثبت‌نام
+     ========================================================== */
+  function renderAuth() {
+    // صفحه ورود بدون نوار تیتر — فقط یک کارت وسط‌چین
+    document.getElementById('pageHead').innerHTML = '';
+    document.body.classList.add('is-auth');
+
+    wrap.innerHTML = `
+    <div class="auth-wrap">
+      <div class="auth-card">
+        <div class="auth-tabs" id="authTabs">
+          <button type="button" data-tab="login" class="is-on">ورود</button>
+          <button type="button" data-tab="signup">ثبت‌نام</button>
+        </div>
+
+        <!-- ورود -->
+        <div id="paneLogin">
+          <h2>ورود به حساب</h2>
+          <p class="sub">ایمیل یا شماره تلفنی که با آن ثبت‌نام کرده‌اید را وارد کنید.</p>
+          <form id="loginForm" novalidate>
+            <div class="field">
+              <label for="lLogin">ایمیل یا شماره تلفن <span class="req">*</span></label>
+              <input id="lLogin" placeholder="example@gmail.com یا 09121234567" dir="ltr" autocomplete="username">
+              <div class="field__err"></div>
+            </div>
+            <div class="field">
+              <label for="lPass">رمز عبور <span class="req">*</span></label>
+              <input id="lPass" type="password" placeholder="••••••••" dir="ltr" autocomplete="current-password">
+              <div class="field__err"></div>
+            </div>
+            <button class="btn btn--block btn--lg" type="submit">${ui('lock')} ورود</button>
+          </form>
+          <div class="auth-alt">
+            رمز عبور را فراموش کرده‌اید؟ <button type="button" id="goForgot">بازیابی رمز</button>
+          </div>
+          <div class="auth-divider">یا</div>
+          <div class="auth-alt">
+            حساب کاربری ندارید؟ <button type="button" id="goSignup">ساخت حساب جدید</button>
+          </div>
+        </div>
+
+        <!-- ثبت‌نام -->
+        <div id="paneSignup" style="display:none">
+          <h2>ساخت حساب جدید</h2>
+          <p class="sub">با ساخت حساب، سفارش‌هایتان قابل پیگیری می‌شود و می‌توانید به محصولات امتیاز بدهید.</p>
+          <div class="req-note">فیلدهای دارای <b>*</b> اجباری هستند.</div>
+          <form id="signupForm" novalidate>
+            <div class="field">
+              <label for="sName">نام و نام خانوادگی <span class="req">*</span></label>
+              <input id="sName" placeholder="مثلاً علی رضایی" autocomplete="name">
+              <div class="field__err"></div>
+            </div>
+            <div class="field">
+              <label for="sEmail">ایمیل (جیمیل) <span class="req">*</span></label>
+              <input id="sEmail" type="email" placeholder="example@gmail.com" dir="ltr" autocomplete="email">
+              <div class="field__err"></div>
+            </div>
+            <div class="field">
+              <label for="sPhone">شماره تلفن همراه <span class="req">*</span></label>
+              <input id="sPhone" placeholder="09121234567" dir="ltr" autocomplete="tel">
+              <div class="field__err"></div>
+            </div>
+            <div class="field">
+              <label for="sPass">رمز عبور <span class="req">*</span></label>
+              <input id="sPass" type="password" placeholder="حداقل ۶ کاراکتر" dir="ltr" autocomplete="new-password">
+              <div class="field__hint">برای ورودهای بعدی، با ایمیل یا شماره تلفن و همین رمز وارد می‌شوید.</div>
+              <div class="field__err"></div>
+            </div>
+            <div class="field">
+              <label for="sPass2">تکرار رمز عبور <span class="req">*</span></label>
+              <input id="sPass2" type="password" placeholder="••••••••" dir="ltr" autocomplete="new-password">
+              <div class="field__err"></div>
+            </div>
+            <button class="btn btn--block btn--lg" type="submit">${ui('user')} ساخت حساب و ورود</button>
+          </form>
+          <div class="auth-alt">
+            قبلاً ثبت‌نام کرده‌اید؟ <button type="button" id="goLogin">ورود به حساب</button>
+          </div>
+        </div>
+
+        <!-- بازیابی رمز -->
+        <div id="paneForgot" style="display:none">
+          <h2>بازیابی رمز عبور</h2>
+          <p class="sub">ایمیل یا شماره تلفن حساب خود را وارد کنید تا رمز جدید تعیین کنید.</p>
+          <form id="forgotForm" novalidate>
+            <div class="field">
+              <label for="fLogin">ایمیل یا شماره تلفن <span class="req">*</span></label>
+              <input id="fLogin" placeholder="example@gmail.com یا 09121234567" dir="ltr">
+              <div class="field__err"></div>
+            </div>
+            <div id="fStep2" style="display:none">
+              <div class="field">
+                <label for="fPass">رمز عبور جدید <span class="req">*</span></label>
+                <input id="fPass" type="password" placeholder="حداقل ۶ کاراکتر" dir="ltr">
+                <div class="field__err"></div>
+              </div>
+              <div class="field">
+                <label for="fPass2">تکرار رمز جدید <span class="req">*</span></label>
+                <input id="fPass2" type="password" placeholder="••••••••" dir="ltr">
+                <div class="field__err"></div>
+              </div>
+            </div>
+            <button class="btn btn--block btn--lg" type="submit" id="fBtn">بررسی حساب</button>
+          </form>
+          <div class="auth-alt">
+            <button type="button" id="goLogin2">بازگشت به ورود</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+    const panes = {
+      login: document.getElementById('paneLogin'),
+      signup: document.getElementById('paneSignup'),
+      forgot: document.getElementById('paneForgot')
+    };
+    const tabs = document.getElementById('authTabs');
+
+    function show(which) {
+      Object.keys(panes).forEach(k => { panes[k].style.display = k === which ? '' : 'none'; });
+      tabs.style.display = which === 'forgot' ? 'none' : '';
+      tabs.querySelectorAll('button').forEach(b => b.classList.toggle('is-on', b.dataset.tab === which));
+      clearErrs();
+    }
+
+    tabs.querySelectorAll('button').forEach(b => b.onclick = () => show(b.dataset.tab));
+    document.getElementById('goSignup').onclick = () => show('signup');
+    document.getElementById('goLogin').onclick = () => show('login');
+    document.getElementById('goForgot').onclick = () => show('forgot');
+    document.getElementById('goLogin2').onclick = () => show('login');
+
+    /* ---- ورود ---- */
+    document.getElementById('loginForm').onsubmit = e => {
+      e.preventDefault();
+      clearErrs();
+      const login = document.getElementById('lLogin').value.trim();
+      const pass = document.getElementById('lPass').value;
+      let bad = false;
+      if (!login) { setErr('lLogin', 'ایمیل یا شماره تلفن را وارد کنید'); bad = true; }
+      if (!pass) { setErr('lPass', 'رمز عبور را وارد کنید'); bad = true; }
+      if (bad) return;
+
+      const u = Store.findUser(login);
+      if (!u || u.pass !== pass) {
+        setErr('lLogin', 'ایمیل/تلفن یا رمز عبور درست نیست');
+        setErr('lPass', ' ');
+        toast('اطلاعات ورود درست نیست', 'err');
+        return;
+      }
+      Store.setSession(u);
+      toast('خوش آمدید، ' + (u.name || ''));
+      setTimeout(() => { location.href = nextUrl || 'account.html'; }, 500);
+    };
+
+    /* ---- ثبت‌نام ---- */
+    document.getElementById('signupForm').onsubmit = e => {
+      e.preventDefault();
+      clearErrs();
+      const name = document.getElementById('sName').value.trim();
+      const email = document.getElementById('sEmail').value.trim();
+      const phone = document.getElementById('sPhone').value.trim();
+      const pass = document.getElementById('sPass').value;
+      const pass2 = document.getElementById('sPass2').value;
+      let bad = false;
+
+      if (name.length < 3) { setErr('sName', 'نام و نام خانوادگی را کامل وارد کنید'); bad = true; }
+      if (!isEmail(email)) { setErr('sEmail', 'ایمیل معتبر وارد کنید (مثلاً name@gmail.com)'); bad = true; }
+      if (!isPhone(phone)) { setErr('sPhone', 'شماره موبایل معتبر وارد کنید (مثلاً 09121234567)'); bad = true; }
+      if (pass.length < 6) { setErr('sPass', 'رمز عبور باید حداقل ۶ کاراکتر باشد'); bad = true; }
+      if (pass !== pass2) { setErr('sPass2', 'رمز عبور و تکرار آن یکسان نیست'); bad = true; }
+      if (bad) return;
+
+      if (Store.findUser(email)) { setErr('sEmail', 'این ایمیل قبلاً ثبت شده است'); return; }
+      if (Store.findUser(phone)) { setErr('sPhone', 'این شماره قبلاً ثبت شده است'); return; }
+
+      const u = Store.addUser({ name, email, phone, pass });
+      Store.setSession(u);
+      toast('حساب شما ساخته شد. خوش آمدید!');
+      setTimeout(() => { location.href = nextUrl || 'account.html'; }, 600);
+    };
+
+    /* ---- بازیابی رمز ---- */
+    let forgotUser = null;
+    document.getElementById('forgotForm').onsubmit = e => {
+      e.preventDefault();
+      clearErrs();
+
+      if (!forgotUser) {
+        const login = document.getElementById('fLogin').value.trim();
+        if (!login) { setErr('fLogin', 'ایمیل یا شماره تلفن را وارد کنید'); return; }
+        const u = Store.findUser(login);
+        if (!u) { setErr('fLogin', 'حسابی با این ایمیل یا شماره پیدا نشد'); return; }
+        forgotUser = u;
+        document.getElementById('fStep2').style.display = '';
+        document.getElementById('fBtn').textContent = 'ذخیره رمز جدید';
+        toast('حساب پیدا شد. رمز جدید را تعیین کنید');
+        return;
+      }
+
+      const pass = document.getElementById('fPass').value;
+      const pass2 = document.getElementById('fPass2').value;
+      if (pass.length < 6) { setErr('fPass', 'رمز عبور باید حداقل ۶ کاراکتر باشد'); return; }
+      if (pass !== pass2) { setErr('fPass2', 'رمز عبور و تکرار آن یکسان نیست'); return; }
+
+      Store.updateUser(forgotUser.id, { pass });
+      toast('رمز عبور تغییر کرد. حالا وارد شوید');
+      forgotUser = null;
+      show('login');
+      document.getElementById('lLogin').value = document.getElementById('fLogin').value.trim();
+    };
+  }
+
+  /* ==========================================================
+     داشبورد کاربر
+     ========================================================== */
+  function renderDashboard(user) {
+    document.body.classList.remove('is-auth');
+    document.getElementById('pageHead').innerHTML = pageHead(
+      'حساب کاربری',
+      'سفارش‌ها، اطلاعات حساب و پشتیبانی',
+      [{ label: 'حساب کاربری' }]
+    );
+
+    const orders = Store.ordersOf(user.id);
+    const myTickets = Store.tickets().filter(t => t.userId === user.id);
+
+    wrap.innerHTML = `
+    <div class="acct-head">
+      <div class="acct-head__avatar">${esc((user.name || '?').trim().charAt(0))}</div>
+      <div class="acct-head__info">
+        <b>${esc(user.name || 'کاربر پارس آبی')}</b>
+        <span dir="ltr">${esc(user.email)}</span>
+        <span dir="ltr">${faNum(user.phone)}</span>
+      </div>
+      <div class="acct-head__right">
+        <button class="btn btn--outline btn--sm" id="logoutBtn">${ui('logout')} خروج از حساب</button>
+      </div>
+    </div>
+
+    <div class="tabs" id="acctTabs">
+      <button data-tab="orders" class="is-on">سفارش‌های من</button>
+      <button data-tab="profile">اطلاعات حساب</button>
+      <button data-tab="support">سوال و پشتیبانی</button>
+    </div>
+
+    <div id="paneOrders">
+      ${orders.length ? orders.map(o => {
+        const st = statusInfo(o.status);
+        const qty = o.items.reduce((a, i) => a + i.qty, 0);
+        return `<div class="order-row">
+          <div class="order-row__head">
+            <b dir="ltr">${esc(o.code)}</b>
+            <span>${faDate(o.date)}</span>
+            <span>${faNum(qty)} کالا</span>
+            <span class="spacer"></span>
+            <span class="pill ${st.cls}">${st.label}</span>
+          </div>
+          <div class="order-row__body">
+            ${o.items.map(i => `<div class="order-row__item"><span>${esc(i.name)} × ${faNum(i.qty)}</span><b>${money(i.price * i.qty)} تومان</b></div>`).join('')}
+            <div class="order-row__item" style="border-top:1px dashed var(--line);margin-top:8px;padding-top:10px">
+              <span>مبلغ کل</span><b style="color:var(--blue-800)">${money(o.total)} تومان</b>
+            </div>
+          </div>
+        </div>`;
+      }).join('') : `<div class="empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="9" cy="20" r="1.6"/><circle cx="18" cy="20" r="1.6"/><path d="M2 3h3l2.4 11.2A2 2 0 0 0 9.4 16h8.2a2 2 0 0 0 2-1.6L21 7H6"/></svg>
+        <h3>هنوز سفارشی ثبت نکرده‌اید</h3>
+        <p>از فروشگاه محصولی انتخاب کنید تا اینجا نمایش داده شود.</p>
+        <a href="shop.html" class="btn" style="margin-top:18px">رفتن به فروشگاه</a>
+      </div>`}
+    </div>
+
+    <div id="paneProfile" style="display:none">
+      <div class="auth-card" style="max-width:620px">
+        <h2 style="font-size:17px;margin-bottom:18px">اطلاعات حساب</h2>
+        <div class="field">
+          <label for="pName">نام و نام خانوادگی</label>
+          <input id="pName" value="${esc(user.name)}">
+        </div>
+        <div class="field">
+          <label for="pEmail">ایمیل</label>
+          <input id="pEmail" value="${esc(user.email)}" dir="ltr">
+        </div>
+        <div class="field">
+          <label for="pPhone">شماره تلفن</label>
+          <input id="pPhone" value="${esc(user.phone)}" dir="ltr">
+        </div>
+        <div class="field">
+          <label for="pPass">رمز عبور جدید</label>
+          <input id="pPass" type="password" placeholder="خالی بگذارید تا تغییر نکند" dir="ltr">
+          <div class="field__hint">اگر می‌خواهید رمز فعلی را عوض کنید، رمز جدید را وارد کنید.</div>
+        </div>
+        <button class="btn" id="saveProfile">ذخیره تغییرات</button>
+      </div>
+    </div>
+
+    <div id="paneSupport" style="display:none">
+      <div style="display:grid;grid-template-columns:1fr 1.3fr;gap:24px;align-items:start" id="supportGrid">
+        <div class="ticket-box">
+          <h2 style="font-size:16px;margin-bottom:6px">سوال جدید</h2>
+          <p style="font-size:12.5px;color:var(--ink-mute);margin-bottom:18px;line-height:1.9">سوال یا درخواستتان را بنویسید؛ کارشناس ما در پنل مدیریت آن را می‌بیند و پاسخ می‌دهد.</p>
+          <div class="field">
+            <label for="tSubject">موضوع <span class="req">*</span></label>
+            <select id="tSubject">
+              <option>استعلام قیمت محصول</option>
+              <option>مشاوره فنی و انتخاب پمپ</option>
+              <option>پیگیری سفارش</option>
+              <option>خدمات پس از فروش</option>
+              <option>سایر</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="tMsg">متن پیام <span class="req">*</span></label>
+            <textarea id="tMsg" placeholder="توضیح دهید چه چیزی نیاز دارید..."></textarea>
+            <div class="field__err"></div>
+          </div>
+          <button class="btn btn--block" id="tSubmit">ارسال سوال</button>
+        </div>
+
+        <div>
+          <h2 style="font-size:16px;margin-bottom:14px">سوال‌های من</h2>
+          <div class="ticket-list" id="myTickets"></div>
+        </div>
+      </div>
+    </div>`;
+
+    /* tabs */
+    const panes = {
+      orders: document.getElementById('paneOrders'),
+      profile: document.getElementById('paneProfile'),
+      support: document.getElementById('paneSupport')
+    };
+    document.querySelectorAll('#acctTabs button').forEach(b => {
+      b.onclick = () => {
+        document.querySelectorAll('#acctTabs button').forEach(x => x.classList.toggle('is-on', x === b));
+        Object.keys(panes).forEach(k => { panes[k].style.display = k === b.dataset.tab ? '' : 'none'; });
+      };
+    });
+
+    document.getElementById('logoutBtn').onclick = () => {
+      Store.clearSession();
+      toast('از حساب خارج شدید');
+      setTimeout(() => location.reload(), 400);
+    };
+
+    /* profile */
+    document.getElementById('saveProfile').onclick = () => {
+      const name = document.getElementById('pName').value.trim();
+      const email = document.getElementById('pEmail').value.trim();
+      const phone = document.getElementById('pPhone').value.trim();
+      const pass = document.getElementById('pPass').value;
+
+      if (name.length < 3) { toast('نام را کامل وارد کنید', 'err'); return; }
+      if (!isEmail(email)) { toast('ایمیل معتبر نیست', 'err'); return; }
+      if (!isPhone(phone)) { toast('شماره موبایل معتبر نیست', 'err'); return; }
+
+      const dupE = Store.findUser(email);
+      if (dupE && dupE.id !== user.id) { toast('این ایمیل برای حساب دیگری ثبت شده', 'err'); return; }
+      const dupP = Store.findUser(phone);
+      if (dupP && dupP.id !== user.id) { toast('این شماره برای حساب دیگری ثبت شده', 'err'); return; }
+
+      const patch = { name, email, phone };
+      if (pass) {
+        if (pass.length < 6) { toast('رمز جدید باید حداقل ۶ کاراکتر باشد', 'err'); return; }
+        patch.pass = pass;
+      }
+      Store.updateUser(user.id, patch);
+      Store.setSession(Store.user(user.id));
+      toast('اطلاعات حساب ذخیره شد');
+      setTimeout(() => location.reload(), 600);
+    };
+
+    /* tickets */
+    renderMyTickets();
+
+    function renderMyTickets() {
+      const list = Store.tickets().filter(t => t.userId === user.id);
+      const box = document.getElementById('myTickets');
+      box.innerHTML = list.length ? list.map(t => {
+        const st = ticketStatusInfo(t.status);
+        return `<div class="ticket-item">
+          <div class="ticket-item__top">
+            <b dir="ltr">${esc(t.code)}</b>
+            <span style="font-size:11.5px;color:var(--ink-mute)">${esc(t.subject)}</span>
+            <span style="margin-inline-start:auto" class="pill ${st.cls}">${st.label}</span>
+          </div>
+          <div class="ticket-item__msg">${esc(t.message)}</div>
+          ${t.reply ? '<div class="ticket-item__reply"><b>پاسخ پشتیبانی</b>' + esc(t.reply) + '</div>' : ''}
+          <div style="font-size:11px;color:var(--ink-mute);margin-top:9px">${faDate(t.date)}</div>
+        </div>`;
+      }).join('') : '<div class="empty" style="padding:36px 20px"><h3>سوالی ثبت نکرده‌اید</h3><p>از فرم کنار صفحه سوال خود را بفرستید.</p></div>';
+    }
+
+    document.getElementById('tSubmit').onclick = () => {
+      const msg = document.getElementById('tMsg').value.trim();
+      if (msg.length < 10) { toast('متن سوال را کامل‌تر بنویسید', 'err'); return; }
+      Store.addTicket({
+        userId: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        subject: document.getElementById('tSubject').value,
+        message: msg
+      });
+      document.getElementById('tMsg').value = '';
+      toast('سوال شما ثبت شد. پاسخ در همین صفحه نمایش داده می‌شود.');
+      renderMyTickets();
+    };
+  }
+</script>
+</body>
+</html>

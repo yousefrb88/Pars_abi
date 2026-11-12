@@ -1,0 +1,243 @@
+﻿<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>محصولات | پارس آبی</title>
+<meta name="description" content="خرید پمپ آب، تصفیه آب، مخزن، لوله و اتصالات با قیمت روز و ارسال سریع.">
+<link rel="stylesheet" href="assets/css/style.css?v=20">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%230b6ad4'/%3E%3Cpath d='M12 4c3 3.5 5 6 5 8.5a5 5 0 0 1-10 0C7 10 9 7.5 12 4z' fill='white'/%3E%3C/svg%3E">
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main>
+  <div id="pageHead"></div>
+
+  <section class="section">
+    <div class="wrap shop">
+      <!-- FILTERS -->
+      <aside class="filters" id="filters">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4h16l-6 8v8l-4-2v-6z"/></svg>
+          فیلترها
+        </h3>
+
+        <div class="filter-group">
+          <b>دسته‌بندی</b>
+          <div class="filter-list" id="catFilter"></div>
+        </div>
+
+        <div class="filter-group">
+          <b>برند</b>
+          <div class="filter-list" id="brandFilter"></div>
+        </div>
+
+        <div class="filter-group">
+          <b>محدوده قیمت (تومان)</b>
+          <div class="range-row">
+            <input type="number" id="minPrice" placeholder="از" min="0" step="100000">
+            <input type="number" id="maxPrice" placeholder="تا" min="0" step="100000">
+          </div>
+          <button class="btn btn--ghost btn--sm btn--block" id="applyPrice" style="margin-top:10px">اعمال قیمت</button>
+        </div>
+
+        <div class="filter-group">
+          <b>وضعیت</b>
+          <div class="filter-list">
+            <label><input type="checkbox" id="onlyStock"> فقط کالاهای موجود</label>
+            <label><input type="checkbox" id="onlyOff"> فقط تخفیف‌دار</label>
+          </div>
+        </div>
+
+        <button class="btn btn--ghost btn--sm btn--block" id="resetFilters">حذف همه فیلترها</button>
+      </aside>
+
+      <!-- RESULTS -->
+      <div>
+        <div class="shop__bar">
+          <div class="shop__count"><b id="resCount">۰</b> محصول یافت شد</div>
+          <div class="shop__sort">
+            <label for="sortSel">مرتب‌سازی:</label>
+            <select id="sortSel">
+              <option value="new">جدیدترین</option>
+              <option value="cheap">ارزان‌ترین</option>
+              <option value="expensive">گران‌ترین</option>
+              <option value="popular">پرفروش‌ترین</option>
+              <option value="rating">بیشترین رضایت</option>
+              <option value="name">الفبایی</option>
+            </select>
+          </div>
+        </div>
+        <div class="products products--3" id="grid"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="assets/js/data.js?v=20"></script>
+<script src="assets/js/app.js?v=20"></script>
+<script>
+  initCommon();
+
+  const params = new URLSearchParams(location.search);
+  const state = {
+    q: params.get('q') || '',
+    cat: params.get('cat') || '',
+    brands: [],
+    min: 0,
+    max: 0,
+    stock: false,
+    off: false,
+    sort: params.get('sort') || 'new'
+  };
+
+  const allCats = Store.categories();
+  const allProds = Store.products();
+  const activeCat = state.cat ? Store.category(state.cat) : null;
+
+  document.getElementById('pageHead').innerHTML = pageHead(
+    state.q ? 'نتایج جستجو برای «' + state.q + '»' : (activeCat ? activeCat.name : 'محصولات — تجهیزات آب'),
+    activeCat ? (activeCat.desc || '') : 'پمپ، تصفیه، مخزن، لوله و اتصالات — با ضمانت اصالت و ارسال سریع',
+    activeCat ? [{ label: 'محصولات', href: 'shop.html' }, { label: activeCat.name }] : [{ label: 'محصولات' }]
+  );
+
+  const brands = [...new Set(allProds.map(p => p.brand).filter(Boolean))].sort();
+
+  // build filters
+  document.getElementById('catFilter').innerHTML =
+    '<label><input type="radio" name="cat" value="" ' + (!state.cat ? 'checked' : '') + '> همه دسته‌ها <span class="cnt">' + faNum(allProds.length) + '</span></label>' +
+    allCats.map(c => {
+      const n = allProds.filter(p => p.cat === c.id).length;
+      return '<label><input type="radio" name="cat" value="' + c.id + '" ' + (state.cat === c.id ? 'checked' : '') + '> ' + esc(c.name) + ' <span class="cnt">' + faNum(n) + '</span></label>';
+    }).join('');
+
+  document.getElementById('brandFilter').innerHTML = brands.map(b => {
+    const n = allProds.filter(p => p.brand === b).length;
+    return '<label><input type="checkbox" name="brand" value="' + esc(b) + '"> ' + esc(b) + ' <span class="cnt">' + faNum(n) + '</span></label>';
+  }).join('');
+
+  document.getElementById('sortSel').value = state.sort;
+
+  function render() {
+    let list = allProds.slice();
+
+    if (state.q) {
+      const q = state.q.toLowerCase();
+      list = list.filter(p =>
+        (p.name + ' ' + (p.brand || '') + ' ' + (p.desc || '') + ' ' + (p.sku || '')).toLowerCase().includes(q)
+      );
+    }
+    if (state.cat) list = list.filter(p => p.cat === state.cat);
+    if (state.brands.length) list = list.filter(p => state.brands.includes(p.brand));
+    if (state.min) list = list.filter(p => p.price >= state.min);
+    if (state.max) list = list.filter(p => p.price <= state.max);
+    if (state.stock) list = list.filter(p => p.stock > 0);
+    if (state.off) list = list.filter(p => p.oldPrice && p.oldPrice > p.price);
+
+    switch (state.sort) {
+      case 'cheap': list.sort((a, b) => a.price - b.price); break;
+      case 'expensive': list.sort((a, b) => b.price - a.price); break;
+      case 'popular': list.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0)); break;
+      case 'rating': list.sort((a, b) => Store.rating(b.id).avg - Store.rating(a.id).avg); break;
+      case 'name': list.sort((a, b) => a.name.localeCompare(b.name, 'fa')); break;
+      default: list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    }
+
+    document.getElementById('resCount').textContent = faNum(list.length);
+    const grid = document.getElementById('grid');
+    grid.innerHTML = list.length
+      ? list.map(productCard).join('')
+      : `<div class="empty" style="grid-column:1/-1">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/><path d="M8 11h6"/></svg>
+           <h3>محصولی با این مشخصات پیدا نشد</h3>
+           <p>فیلترها را تغییر دهید یا عبارت دیگری جستجو کنید.</p>
+         </div>`;
+    observeNew(grid);
+  }
+
+  // events
+  document.getElementById('catFilter').addEventListener('change', e => {
+    if (e.target.name !== 'cat') return;
+    state.cat = e.target.value;
+    // URL را هم به‌روز کن تا منوی بالا درست روشن شود
+    const u = new URLSearchParams(location.search);
+    if (state.cat) u.set('cat', state.cat); else u.delete('cat');
+    const qs = u.toString();
+    history.replaceState({}, '', 'shop.html' + (qs ? '?' + qs : ''));
+    // هدر را دوباره بساز تا فقط دسته فعال آبی شود
+    const hs = document.getElementById('site-header');
+    if (hs) {
+      hs.innerHTML = renderHeader();
+      wireHeaderAgain();
+    }
+    render();
+  });
+  document.getElementById('brandFilter').addEventListener('change', e => {
+    if (e.target.name !== 'brand') return;
+    state.brands = [...document.querySelectorAll('input[name="brand"]:checked')].map(i => i.value);
+    render();
+  });
+
+  document.getElementById('applyPrice').addEventListener('click', () => {
+    state.min = Number(document.getElementById('minPrice').value) || 0;
+    state.max = Number(document.getElementById('maxPrice').value) || 0;
+    render();
+  });
+
+  document.getElementById('onlyStock').addEventListener('change', e => { state.stock = e.target.checked; render(); });
+  document.getElementById('onlyOff').addEventListener('change', e => { state.off = e.target.checked; render(); });
+  document.getElementById('sortSel').addEventListener('change', e => { state.sort = e.target.value; render(); });
+
+  document.getElementById('resetFilters').addEventListener('click', () => {
+    state.q = ''; state.cat = ''; state.brands = [];
+    state.min = 0; state.max = 0; state.stock = false; state.off = false; state.sort = 'new';
+    document.querySelectorAll('#catFilter input')[0].checked = true;
+    document.querySelectorAll('#brandFilter input').forEach(i => i.checked = false);
+    document.getElementById('minPrice').value = '';
+    document.getElementById('maxPrice').value = '';
+    document.getElementById('onlyStock').checked = false;
+    document.getElementById('onlyOff').checked = false;
+    document.getElementById('sortSel').value = 'new';
+    history.replaceState({}, '', 'shop.html');
+    const hs = document.getElementById('site-header');
+    if (hs) { hs.innerHTML = renderHeader(); wireHeaderAgain(); }
+    render();
+  });
+
+  /* بازسازی رویدادهای هدر بعد از رندر مجدد */
+  function wireHeaderAgain() {
+    const burger = document.getElementById('burgerBtn');
+    const drawer = document.getElementById('drawer');
+    const dClose = document.getElementById('drawerClose');
+    if (burger && drawer) {
+      burger.onclick = () => drawer.classList.add('is-open');
+      if (dClose) dClose.onclick = () => drawer.classList.remove('is-open');
+      drawer.onclick = e => { if (e.target === drawer) drawer.classList.remove('is-open'); };
+    }
+    const acctBtn = document.getElementById('acctBtn');
+    const acctMenu = document.getElementById('acctMenu');
+    if (acctBtn && acctMenu) {
+      acctBtn.onclick = e => {
+        e.stopPropagation();
+        const open = acctMenu.classList.toggle('is-open');
+        acctBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      };
+    }
+    const hs = document.getElementById('headerSearch');
+    if (hs) hs.onsubmit = e => {
+      e.preventDefault();
+      const q = hs.querySelector('input').value.trim();
+      location.href = 'shop.html' + (q ? '?q=' + encodeURIComponent(q) : '');
+    };
+    const lo = document.getElementById('acctLogout');
+    if (lo) lo.onclick = () => { Store.clearSession(); toast('از حساب خارج شدید'); setTimeout(() => location.reload(), 400); };
+  }
+
+  render();
+</script>
+</body>
+</html>

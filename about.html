@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>درباره ما | پارس آبی</title>
+<link rel="stylesheet" href="assets/css/style.css?v=20">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%230b6ad4'/%3E%3Cpath d='M12 4c3 3.5 5 6 5 8.5a5 5 0 0 1-10 0C7 10 9 7.5 12 4z' fill='white'/%3E%3C/svg%3E">
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main>
+  <div id="pageHead"></div>
+
+  <section class="section">
+    <div class="wrap" style="display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center" id="aboutTop">
+      <div class="reveal">
+        <span class="kicker" style="display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:800;color:var(--blue-600);margin-bottom:12px">داستان ما</span>
+        <h2 id="aboutTitle" style="font-size:clamp(22px,2.6vw,32px);color:var(--blue-950);margin-bottom:18px;letter-spacing:-.6px"></h2>
+        <div id="aboutText" style="color:var(--ink-soft);font-size:14.5px;line-height:2.15"></div>
+      </div>
+      <div class="reveal" style="background:var(--grad-deep);border-radius:var(--r-xl);padding:38px;color:#fff;position:relative;overflow:hidden">
+        <div style="position:absolute;inset:0;background:radial-gradient(400px 260px at 90% 10%,rgba(34,200,232,.3),transparent 65%)"></div>
+        <div class="about-stats" style="position:relative" id="aboutStats"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--tight" style="background:#fff;border-block:1px solid var(--line)">
+    <div class="wrap">
+      <div class="head reveal">
+        <div class="head__left">
+          <span class="kicker">اصول کار ما</span>
+          <h2>سه چیزی که سر آن معامله نمی‌کنیم</h2>
+        </div>
+      </div>
+      <div class="why">
+        <div class="why__card reveal">
+          <span class="num">۰۱</span>
+          <h3>محاسبه قبل از فروش</h3>
+          <p>هیچ پمپی بدون دانستن دبی، ارتفاع و شرایط نصب پیشنهاد نمی‌شود. اگر محصول مناسب نداشته باشیم، می‌گوییم نداریم.</p>
+        </div>
+        <div class="why__card reveal">
+          <span class="num">۰۲</span>
+          <h3>اصالت قابل اثبات</h3>
+          <p>هر کالا با فاکتور رسمی و کارت گارانتی شرکتی ارسال می‌شود. شماره سریال روی فاکتور ثبت می‌شود تا قابل پیگیری باشد.</p>
+        </div>
+        <div class="why__card reveal">
+          <span class="num">۰۳</span>
+          <h3>پاسخ‌گویی بعد از فروش</h3>
+          <p>قطعات مصرفی برندهای تحت پوشش را در انبار نگه می‌داریم. سرویس و تعمیر هم انجام می‌شود — نه فقط فروش.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="banner reveal">
+        <div>
+          <h2>سوالی درباره تجهیزات آب دارید؟</h2>
+          <p>کارشناسان ما آماده پاسخ‌گویی هستند. کافی است سوال خود را بپرسید تا در اسرع وقت راهنمایی‌تان کنیم.</p>
+          <div class="banner__list">
+            <a href="contact.html" class="btn">تماس با ما</a>
+            <a href="shop.html" class="btn btn--outline">مشاهده محصولات</a>
+          </div>
+        </div>
+        <div id="aboutBannerCards"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="assets/js/data.js?v=20"></script>
+<script src="assets/js/app.js?v=20"></script>
+<script>
+  initCommon('about.html');
+
+  const s = Store.settings();
+  document.getElementById('pageHead').innerHTML = pageHead('درباره پارس آبی', 'فروشنده تجهیزات آب، نه فقط فروشگاه', [{ label: 'درباره ما' }]);
+
+  document.getElementById('aboutTitle').textContent = tokens(s.aboutTitle);
+  document.getElementById('aboutText').innerHTML = paragraphs(tokens(s.aboutText));
+
+  /* آمار کنار متن — همه از پنل مدیریت */
+  document.getElementById('aboutStats').innerHTML = (s.aboutStats || []).map(st =>
+    `<div><b>${esc(tokens(st.v))}</b><span>${esc(st.l)}</span></div>`
+  ).join('');
+
+  document.getElementById('aboutBannerCards').innerHTML = `
+    <div class="banner__card"><b>${s.statProvinces ? faNum(s.statProvinces) : '—'}</b><span>استان تحت پوشش ارسال</span></div>
+    <div class="banner__card"><b>${faNum(Store.products().length)}</b><span>مدل محصول فعال</span></div>`;
+
+  observeNew();
+</script>
+</body>
+</html>

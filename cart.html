@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>سبد خرید | پارس آبی</title>
+<link rel="stylesheet" href="assets/css/style.css?v=20">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%230b6ad4'/%3E%3Cpath d='M12 4c3 3.5 5 6 5 8.5a5 5 0 0 1-10 0C7 10 9 7.5 12 4z' fill='white'/%3E%3C/svg%3E">
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main>
+  <div id="pageHead"></div>
+  <section class="section" style="padding-top:38px">
+    <div class="wrap" id="cartWrap"></div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="assets/js/data.js?v=20"></script>
+<script src="assets/js/app.js?v=20"></script>
+<script>
+  initCommon('cart.html');
+  document.getElementById('pageHead').innerHTML = pageHead('سبد خرید', 'مرور سفارش و تکمیل اطلاعات ارسال', [{ label: 'سبد خرید' }]);
+
+  const wrap = document.getElementById('cartWrap');
+  const s = Store.settings();
+  const sess = Store.session();
+
+  // اگر وارد شده، نام و تلفن را پیش‌پر کن
+  function prefill() {
+    if (!sess) return;
+    const n = document.getElementById('cName');
+    const p = document.getElementById('cPhone');
+    if (n && !n.value) n.value = sess.name || '';
+    if (p && !p.value) p.value = sess.phone || '';
+  }
+
+  function totals() {
+    const items = Store.cart();
+    let sub = 0, count = 0;
+    items.forEach(i => {
+      const p = Store.product(i.pid);
+      if (p) { sub += p.price * i.qty; count += i.qty; }
+    });
+    const ship = (sub >= s.freeShipLimit || sub === 0) ? 0 : s.shipCost;
+    const tax = Math.round(sub * (s.taxPercent / 100));
+    return { items, sub, ship, tax, total: sub + ship + tax, count };
+  }
+
+  function render() {
+    const t = totals();
+
+    if (!t.items.length) {
+      wrap.innerHTML = `<div class="empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><circle cx="9" cy="20" r="1.6"/><circle cx="18" cy="20" r="1.6"/><path d="M2 3h3l2.4 11.2A2 2 0 0 0 9.4 16h8.2a2 2 0 0 0 2-1.6L21 7H6"/></svg>
+        <h3>سبد خرید شما خالی است</h3>
+        <p>از فروشگاه محصولی انتخاب کنید تا اینجا نمایش داده شود.</p>
+        <a href="shop.html" class="btn" style="margin-top:20px">رفتن به فروشگاه</a>
+      </div>`;
+      return;
+    }
+
+    wrap.innerHTML = `
+    <div class="cart-layout">
+      <div>
+        <div class="cart-box">
+          <div class="cart-box__head">
+            <h2>اقلام سفارش</h2>
+            <span>${faNum(t.count)} عدد کالا</span>
+          </div>
+          ${t.items.map(i => {
+            const p = Store.product(i.pid);
+            if (!p) return '';
+            return `<div class="citem" data-row="${p.id}">
+              <a href="product.html?id=${p.id}" class="citem__img">${productThumb(p)}</a>
+              <div>
+                <a href="product.html?id=${p.id}" class="citem__title">${esc(p.name)}</a>
+                <div class="citem__sub">${esc(p.brand || '')} · کد ${esc(p.sku || '—')}</div>
+                <div class="qty">
+                  <button type="button" data-dec="${p.id}">−</button>
+                  <input type="number" value="${i.qty}" min="1" max="${p.stock}" data-qty="${p.id}" aria-label="تعداد">
+                  <button type="button" data-inc="${p.id}">+</button>
+                </div>
+              </div>
+              <div class="citem__right">
+                <div class="citem__price">${money(p.price * i.qty)}<small> تومان</small></div>
+                <button class="citem__del" data-del="${p.id}">${ui('trash')} حذف</button>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+
+        <div class="cart-box" style="margin-top:22px">
+          <div class="cart-box__head"><h2>اطلاعات گیرنده</h2></div>
+          <div style="padding:22px 24px">
+            <div id="loginNotice"></div>
+            <div class="field--row">
+              <div class="field"><label for="cName">نام و نام خانوادگی *</label><input id="cName" placeholder="مثلاً علی رضایی"></div>
+              <div class="field"><label for="cPhone">شماره تماس *</label><input id="cPhone" placeholder="09121234567" dir="ltr"></div>
+            </div>
+            <div class="field"><label for="cAddr">آدرس کامل پستی *</label><textarea id="cAddr" placeholder="استان، شهر، خیابان، پلاک، واحد"></textarea></div>
+            <div class="field"><label for="cNote">توضیحات سفارش (اختیاری)</label><textarea id="cNote" placeholder="مثلاً نیاز به فاکتور رسمی دارم"></textarea></div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="summary">
+        <h3>خلاصه سفارش</h3>
+        <div class="summary__row"><span>جمع کالاها</span><b>${money(t.sub)} تومان</b></div>
+        <div class="summary__row"><span>هزینه ارسال</span><b>${t.ship ? money(t.ship) + ' تومان' : 'رایگان'}</b></div>
+        <div class="summary__row"><span>مالیات بر ارزش افزوده (${faNum(s.taxPercent)}٪)</span><b>${money(t.tax)} تومان</b></div>
+        <div class="summary__row summary__row--total"><span>مبلغ قابل پرداخت</span><b>${money(t.total)} تومان</b></div>
+        <button class="btn btn--block btn--lg" id="checkoutBtn">ثبت سفارش</button>
+        <p class="summary__note">پس از ثبت، کارشناس ما برای تأیید موجودی و هماهنگی ارسال تماس می‌گیرد.</p>
+      </aside>
+    </div>`;
+
+    // wire
+    const sess = Store.session();
+    const notice = document.getElementById('loginNotice');
+    if (notice) {
+      if (!sess) {
+        notice.innerHTML = `<div style="display:flex;align-items:center;gap:11px;padding:13px 16px;background:#fff8ec;border:1px solid #f6e0b8;border-radius:12px;margin-bottom:18px;font-size:12.5px;color:#8a5a00;line-height:1.9">
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="flex:none"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          <span>برای ثبت سفارش باید وارد حساب کاربری شوید. <a href="account.html?next=cart.html" style="color:var(--blue-600);font-weight:800">ورود / ثبت‌نام</a></span>
+        </div>`;
+      } else {
+        notice.innerHTML = `<div style="display:flex;align-items:center;gap:11px;padding:13px 16px;background:var(--blue-50);border:1px solid var(--blue-100);border-radius:12px;margin-bottom:18px;font-size:12.5px;color:var(--blue-800);line-height:1.9">
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="flex:none"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>
+          <span>سفارش برای <b>${esc(sess.name)}</b> ثبت می‌شود.</span>
+        </div>`;
+      }
+    }
+
+    wrap.querySelectorAll('[data-inc]').forEach(b => b.onclick = () => {
+      const id = b.dataset.inc;
+      const cur = Store.cart().find(i => i.pid === id);
+      Store.updateCartQty(id, cur.qty + 1); render(); updateCartBadge();
+    });
+    wrap.querySelectorAll('[data-dec]').forEach(b => b.onclick = () => {
+      const id = b.dataset.dec;
+      const cur = Store.cart().find(i => i.pid === id);
+      if (cur.qty <= 1) { Store.removeFromCart(id); toast('کالا از سبد حذف شد'); }
+      else Store.updateCartQty(id, cur.qty - 1);
+      render(); updateCartBadge();
+    });
+    wrap.querySelectorAll('[data-qty]').forEach(inp => inp.onchange = () => {
+      Store.updateCartQty(inp.dataset.qty, Math.max(1, +inp.value || 1));
+      render(); updateCartBadge();
+    });
+    wrap.querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
+      Store.removeFromCart(b.dataset.del);
+      toast('کالا از سبد حذف شد');
+      render(); updateCartBadge();
+    });
+
+    document.getElementById('checkoutBtn').onclick = () => {
+      const sess = Store.session();
+      if (!sess) {
+        toast('برای ثبت سفارش ابتدا وارد حساب کاربری شوید');
+        setTimeout(() => {
+          location.href = 'account.html?next=' + encodeURIComponent('cart.html');
+        }, 800);
+        return;
+      }
+
+      const name = document.getElementById('cName').value.trim();
+      const phone = document.getElementById('cPhone').value.trim();
+      const addr = document.getElementById('cAddr').value.trim();
+      const note = document.getElementById('cNote').value.trim();
+
+      if (name.length < 3) { toast('نام و نام خانوادگی را کامل وارد کنید', 'err'); return; }
+      if (!/^0?9\d{9}$/.test(phone.replace(/[\s-]/g, ''))) { toast('شماره تماس معتبر نیست', 'err'); return; }
+      if (addr.length < 10) { toast('آدرس را کامل‌تر وارد کنید', 'err'); return; }
+
+      const tt = totals();
+      Store.addOrder({
+        userId: sess.id,
+        customer: name,
+        phone: phone,
+        address: addr,
+        note: note,
+        items: tt.items.map(i => {
+          const p = Store.product(i.pid);
+          return { pid: i.pid, name: p.name, price: p.price, qty: i.qty };
+        }),
+        total: tt.total,
+        status: 'pending'
+      });
+
+      Store.clearCart();
+      updateCartBadge();
+
+      wrap.innerHTML = `<div class="empty" style="border-style:solid;border-color:var(--blue-200)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>
+        <h3>سفارش شما ثبت شد</h3>
+        <p>کارشناس پارس آبی به‌زودی برای تأیید موجودی با شما تماس می‌گیرد. سفارش در حساب کاربری شما قابل پیگیری است.</p>
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:22px;flex-wrap:wrap">
+          <a href="account.html" class="btn">پیگیری سفارش</a>
+          <a href="shop.html" class="btn btn--ghost">ادامه خرید</a>
+        </div>
+      </div>`;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    prefill();
+  }
+
+  render();</script>
+</body>
+</html>

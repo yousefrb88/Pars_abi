@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>تماس با ما | پارس آبی</title>
+<link rel="stylesheet" href="assets/css/style.css?v=20">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%230b6ad4'/%3E%3Cpath d='M12 4c3 3.5 5 6 5 8.5a5 5 0 0 1-10 0C7 10 9 7.5 12 4z' fill='white'/%3E%3C/svg%3E">
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main>
+  <div id="pageHead"></div>
+
+  <section class="section" style="padding-top:38px">
+    <div class="wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:start" id="contactGrid">
+      <div class="cart-box reveal">
+        <div class="cart-box__head"><h2>فرم تماس و پرسش</h2></div>
+        <div style="padding:24px">
+          <p style="font-size:12.5px;color:var(--ink-mute);line-height:1.95;margin-bottom:18px">
+            سوال یا درخواستتان را بنویسید. پیام شما در پنل مدیریت ثبت می‌شود و در اسرع وقت پاسخ می‌دهیم.
+          </p>
+          <div class="field--row">
+            <div class="field">
+              <label for="fName">نام و نام خانوادگی <span class="req">*</span></label>
+              <input id="fName" placeholder="نام شما">
+              <div class="field__err"></div>
+            </div>
+            <div class="field">
+              <label for="fPhone">شماره تماس <span class="req">*</span></label>
+              <input id="fPhone" placeholder="09121234567" dir="ltr">
+              <div class="field__err"></div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="fSubject">موضوع</label>
+            <select id="fSubject">
+              <option>استعلام قیمت محصول</option>
+              <option>مشاوره فنی و انتخاب پمپ</option>
+              <option>پیگیری سفارش</option>
+              <option>خدمات پس از فروش</option>
+              <option>سایر</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="fMsg">متن پیام <span class="req">*</span></label>
+            <textarea id="fMsg" placeholder="توضیح دهید چه چیزی نیاز دارید. اگر اطلاعات فنی دارید (دبی، ارتفاع، متراژ) بنویسید."></textarea>
+            <div class="field__err"></div>
+          </div>
+          <button class="btn btn--block btn--lg" id="sendBtn">ارسال پیام</button>
+          <div class="auth-alt" id="contactAuthNote"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="cart-box reveal" style="margin-bottom:22px">
+          <div class="cart-box__head"><h2>راه‌های ارتباطی</h2></div>
+          <div style="padding:18px 24px 22px">
+            <div class="chan-list" id="contactList"></div>
+          </div>
+        </div>
+
+        <div class="reveal" style="background:var(--grad-deep);border-radius:var(--r-lg);padding:30px;color:#fff;position:relative;overflow:hidden">
+          <div style="position:absolute;inset:0;background:radial-gradient(360px 240px at 88% 12%,rgba(34,200,232,.3),transparent 65%)"></div>
+          <div style="position:relative">
+            <h3 style="font-size:17px;margin-bottom:10px">مشاوره فوری تلفنی</h3>
+            <p style="font-size:13px;color:#bcd9f5;line-height:2;margin-bottom:18px">اگر عجله دارید یا مطمئن نیستید چه پمپی لازم دارید، زنگ بزنید. کارشناس فنی ما در ساعات کاری پاسخ می‌دهد.</p>
+            <a href="#" class="btn" id="callBtn">تماس با کارشناس</a>
+          </div>
+        </div>
+
+        <div class="reveal" id="mapBox" style="margin-top:22px"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="assets/js/data.js?v=20"></script>
+<script src="assets/js/app.js?v=20"></script>
+<script>
+  initCommon('contact.html');
+
+  const s = Store.settings();
+  const sess = Store.session();
+
+  document.getElementById('pageHead').innerHTML = pageHead('تماس با ما', 'سؤال فنی، استعلام قیمت یا پیگیری سفارش — پاسخ می‌دهیم', [{ label: 'تماس با ما' }]);
+
+  /* ---------- راه‌های ارتباطی (همه از پنل) ---------- */
+  const chans = [];
+  if (s.phone) chans.push({ ico: 'phone', label: 'تلفن دفتر', val: faNum(s.phone), href: 'tel:' + s.phone });
+  if (s.mobile) chans.push({ ico: 'phone', label: 'موبایل', val: faNum(s.mobile), href: 'tel:' + s.mobile });
+  if (s.whatsapp) chans.push({ ico: 'whatsapp', label: 'واتساپ', val: faNum(s.whatsapp), href: 'https://wa.me/' + String(s.whatsapp).replace(/[^\d]/g, '') });
+  if (s.telegram) chans.push({ ico: 'telegram', label: 'تلگرام', val: '@' + s.telegram, href: 'https://t.me/' + s.telegram });
+  if (s.email) chans.push({ ico: 'mail', label: 'ایمیل', val: s.email, href: 'mailto:' + s.email });
+  if (s.instagram) chans.push({ ico: 'instagram', label: 'اینستاگرام', val: '@' + s.instagram, href: 'https://instagram.com/' + s.instagram });
+  if (s.workHours) chans.push({ ico: 'clock', label: 'ساعات کاری', val: s.workHours, href: null });
+  if (s.address) chans.push({ ico: 'pin', label: 'آدرس', val: s.address, href: null });
+
+  document.getElementById('contactList').innerHTML = chans.map(c => `
+    <a class="chan" ${c.href ? 'href="' + esc(c.href) + '" target="_blank" rel="noopener"' : 'style="cursor:default"'}>
+      <span class="chan__ico">${ui(c.ico)}</span>
+      <span class="chan__body"><b>${esc(c.label)}</b><span dir="${c.ico === 'pin' ? 'rtl' : 'ltr'}">${esc(c.val)}</span></span>
+    </a>`).join('');
+
+  document.getElementById('callBtn').href = 'tel:' + (s.phone || '');
+
+  /* ---------- نقشه (اگر آدرس/لینک داشت) ---------- */
+  if (s.mapUrl) {
+    document.getElementById('mapBox').innerHTML = `
+      <iframe src="${esc(s.mapUrl)}" style="width:100%;height:260px;border:1px solid var(--line);border-radius:var(--r-lg)" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+  }
+
+  /* ---------- فرم ---------- */
+  if (sess) {
+    document.getElementById('fName').value = sess.name || '';
+    document.getElementById('fPhone').value = sess.phone || '';
+    document.getElementById('contactAuthNote').innerHTML = 'پیام شما به نام <b>' + esc(sess.name) + '</b> ثبت می‌شود و پاسخ در <a href="account.html">حساب کاربری</a> قابل مشاهده است.';
+  } else {
+    document.getElementById('contactAuthNote').innerHTML = 'برای پیگیری پاسخ، <a href="account.html">وارد حساب کاربری</a> شوید. بدون ورود هم می‌توانید پیام بفرستید.';
+  }
+
+  function setErr(inputId, msg) {
+    const input = document.getElementById(inputId);
+    const field = input.closest('.field');
+    field.classList.add('has-err');
+    const err = field.querySelector('.field__err');
+    if (err) err.textContent = msg;
+  }
+  function clearErrs() {
+    document.querySelectorAll('.field.has-err').forEach(f => f.classList.remove('has-err'));
+  }
+
+  document.getElementById('sendBtn').onclick = () => {
+    clearErrs();
+    const name = document.getElementById('fName').value.trim();
+    const phone = document.getElementById('fPhone').value.trim();
+    const msg = document.getElementById('fMsg').value.trim();
+    let bad = false;
+
+    if (name.length < 3) { setErr('fName', 'نام خود را کامل وارد کنید'); bad = true; }
+    if (!/^0?9\d{9}$/.test(phone.replace(/[\s-]/g, ''))) { setErr('fPhone', 'شماره تماس معتبر نیست'); bad = true; }
+    if (msg.length < 10) { setErr('fMsg', 'متن پیام را کامل‌تر بنویسید'); bad = true; }
+    if (bad) return;
+
+    Store.addTicket({
+      userId: sess ? sess.id : null,
+      name: name,
+      email: sess ? sess.email : '',
+      phone: phone,
+      subject: document.getElementById('fSubject').value,
+      message: msg
+    });
+
+    toast('پیام شما ثبت شد. به‌زودی پاسخ می‌دهیم.');
+    document.getElementById('fName').value = sess ? (sess.name || '') : '';
+    document.getElementById('fPhone').value = sess ? (sess.phone || '') : '';
+    document.getElementById('fMsg').value = '';
+  };
+</script>
+</body>
+</html>

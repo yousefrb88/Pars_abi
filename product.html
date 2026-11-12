@@ -1,0 +1,291 @@
+﻿<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>جزئیات محصول | پارس آبی</title>
+<link rel="stylesheet" href="assets/css/style.css?v=20">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%230b6ad4'/%3E%3Cpath d='M12 4c3 3.5 5 6 5 8.5a5 5 0 0 1-10 0C7 10 9 7.5 12 4z' fill='white'/%3E%3C/svg%3E">
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main>
+  <div id="pageHead"></div>
+  <section class="section" style="padding-top:38px">
+    <div class="wrap" id="pdpWrap"></div>
+  </section>
+
+  <!-- نظرات و امتیاز -->
+  <section class="section section--tight" id="reviewsSection" style="display:none">
+    <div class="wrap">
+      <div class="head reveal">
+        <div class="head__left">
+          <span class="kicker">نظر خریداران</span>
+          <h2>تجربه مشتریان با این محصول</h2>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:26px;align-items:start" id="reviewLayout">
+        <div class="cart-box reveal" style="padding:24px" id="reviewSummary"></div>
+        <div>
+          <div class="reviews" id="reviewList"></div>
+
+          <div class="cart-box reveal" style="margin-top:20px" id="reviewFormBox">
+            <div class="cart-box__head"><h2 style="font-size:15px">ثبت نظر و امتیاز</h2></div>
+            <div style="padding:22px 24px" id="reviewFormInner"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--tight" style="background:#fff;border-block:1px solid var(--line)">
+    <div class="wrap">
+      <div class="head reveal">
+        <div class="head__left">
+          <span class="kicker">محصولات مرتبط</span>
+          <h2>شاید این‌ها هم به کارتان بیاید</h2>
+        </div>
+      </div>
+      <div class="products" id="relatedGrid"></div>
+    </div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="assets/js/data.js?v=20"></script>
+<script src="assets/js/app.js?v=20"></script>
+<script>
+  initCommon();
+
+  const id = new URLSearchParams(location.search).get('id');
+  const p = Store.product(id);
+  const wrap = document.getElementById('pdpWrap');
+  const s = Store.settings();
+
+  if (!p) {
+    wrap.innerHTML = `<div class="empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+      <h3>محصول پیدا نشد</h3>
+      <p>ممکن است حذف شده باشد.</p>
+      <a href="shop.html" class="btn" style="margin-top:18px">بازگشت به محصولات</a>
+    </div>`;
+    document.getElementById('pageHead').innerHTML = pageHead('محصول یافت نشد', '', [{ label: 'محصولات', href: 'shop.html' }]);
+  } else {
+    document.title = p.name + ' | پارس آبی';
+    const cat = Store.category(p.cat);
+    const off = p.oldPrice && p.oldPrice > p.price ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
+    const specs = p.specs || {};
+    const rate = Store.rating(p.id);
+
+    document.getElementById('pageHead').innerHTML = pageHead(p.name, '', [
+      { label: 'فروشگاه', href: 'shop.html' },
+      cat ? { label: cat.name, href: 'shop.html?cat=' + cat.id } : null,
+      { label: p.name }
+    ].filter(Boolean));
+
+    wrap.innerHTML = `
+    <div class="pdp">
+      <div class="pdp__gallery">
+        <div class="pdp__main" id="mainImg">${productThumb(p, 'ph')}</div>
+        <div class="pdp__thumbs">
+          <button class="is-active">${productThumb(p, 'ph')}</button>
+          <button>${icon(p.icon || 'pump')}</button>
+          <button>${icon('gauge')}</button>
+        </div>
+        <div class="pdp__notes" style="margin-top:22px">
+          <ul>
+            <li>${ui('shield')}<span>${esc(s.warrantyTitle)} — ${esc(s.warrantyText)}</span></li>
+            <li>${ui('truck')}<span>${esc(s.shippingTitle)} — ${esc(s.shippingCities)}</span></li>
+            <li>${ui('headset')}<span>مشاوره فنی رایگان قبل از خرید</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="pdp__info">
+        <div class="pdp__brandline">
+          <span class="chip">${esc(p.brand || 'پارس آبی')}</span>
+          ${cat ? '<span>دسته: ' + esc(cat.name) + '</span>' : ''}
+          <span>کد کالا: <b dir="ltr">${esc(p.sku || '—')}</b></span>
+        </div>
+        <h1>${esc(p.name)}</h1>
+
+        <div style="margin-bottom:16px">
+          ${rate.count
+            ? `<a href="#reviewsSection" class="rate-badge">${starsHtml(rate.avg)}<b>${faNum(rate.avg.toFixed(1))}</b><span>${faNum(rate.percent)}٪ رضایت از ${faNum(rate.count)} نظر</span></a>`
+            : '<span class="rate-badge" style="background:#fff;border-color:var(--line);color:var(--ink-mute)">هنوز امتیازی ثبت نشده — اولین نفر باشید</span>'}
+        </div>
+
+        <div class="pdp__price">
+          <b>${money(p.price)}<small> تومان</small></b>
+          ${p.oldPrice ? '<del>' + money(p.oldPrice) + ' تومان</del>' : ''}
+          ${off ? '<span class="badge badge--hot" style="position:static">' + faNum(off) + '٪ تخفیف</span>' : ''}
+        </div>
+
+        <p class="pdp__desc">${esc(p.desc || '')}</p>
+
+        ${Object.keys(specs).length ? `<div class="specs">
+          ${Object.entries(specs).map(([k, v]) => '<div class="specs__row"><dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd></div>').join('')}
+        </div>` : ''}
+
+        <div class="pdp__actions">
+          <div class="qty">
+            <button type="button" id="qMinus">−</button>
+            <input type="number" id="qty" value="1" min="1" max="${p.stock}" aria-label="تعداد">
+            <button type="button" id="qPlus">+</button>
+          </div>
+          <button class="btn btn--lg" id="addToCart" ${p.stock <= 0 ? 'disabled' : ''}>
+            ${ui('cart')} ${p.stock > 0 ? 'افزودن به سبد خرید' : 'ناموجود'}
+          </button>
+          <button class="icon-btn" id="wishBtn" style="width:52px;height:52px;border-radius:16px" aria-label="علاقه‌مندی">${ui('heart')}</button>
+        </div>
+
+        <div class="pdp__brandline" style="margin-top:4px">
+          <span class="pill ${p.stock > 0 ? 'pill--ok' : 'pill--danger'}">${p.stock > 0 ? 'موجود در انبار (' + faNum(p.stock) + ' عدد)' : 'ناموجود'}</span>
+        </div>
+      </div>
+    </div>`;
+
+    // qty controls
+    const qty = document.getElementById('qty');
+    document.getElementById('qMinus').onclick = () => { qty.value = Math.max(1, +qty.value - 1); };
+    document.getElementById('qPlus').onclick = () => { qty.value = Math.min(p.stock || 99, +qty.value + 1); };
+
+    document.getElementById('addToCart').onclick = () => {
+      Store.addToCart(p.id, Math.max(1, +qty.value || 1));
+      updateCartBadge();
+      toast('«' + p.name + '» به سبد اضافه شد');
+    };
+
+    const wishBtn = document.getElementById('wishBtn');
+    if (Store.wishlist().includes(p.id)) wishBtn.style.color = 'var(--danger)';
+    wishBtn.onclick = () => {
+      const w = Store.toggleWish(p.id);
+      wishBtn.style.color = w.includes(p.id) ? 'var(--danger)' : '';
+      toast(w.includes(p.id) ? 'به علاقه‌مندی‌ها اضافه شد' : 'از علاقه‌مندی‌ها حذف شد');
+    };
+
+    // related
+    const rel = Store.products().filter(x => x.cat === p.cat && x.id !== p.id).slice(0, 4);
+    const fallback = Store.products().filter(x => x.id !== p.id).slice(0, 4);
+    document.getElementById('relatedGrid').innerHTML = (rel.length ? rel : fallback).map(productCard).join('');
+    observeNew();
+
+    /* ---------- نظرات و امتیاز ---------- */
+    renderReviews();
+
+    function renderReviews() {
+      const section = document.getElementById('reviewsSection');
+      section.style.display = '';
+      const r = Store.rating(p.id);
+      const list = Store.reviews(p.id);
+
+      document.getElementById('reviewSummary').innerHTML = `
+        <div class="rate-big" style="margin-bottom:18px">
+          <div class="rate-big__num">${r.count ? faNum(r.avg.toFixed(1)) : '—'}</div>
+          <div class="rate-big__meta">
+            ${starsHtml(r.avg, 'lg')}
+            <b>${r.count ? faNum(r.percent) + '٪ از خریداران راضی بودند' : 'هنوز امتیازی ثبت نشده'}</b>
+            <span>${r.count ? 'بر اساس ' + faNum(r.count) + ' نظر ثبت‌شده' : 'اولین نظر را شما بنویسید'}</span>
+          </div>
+        </div>
+        ${r.count ? `
+        <div style="display:grid;gap:8px;border-top:1px solid var(--line);padding-top:16px">
+          ${[5,4,3,2,1].map(st => {
+            const n = list.filter(x => Number(x.stars) === st).length;
+            const pct = r.count ? Math.round(n / r.count * 100) : 0;
+            return `<div style="display:flex;align-items:center;gap:10px;font-size:11.5px;color:var(--ink-mute)">
+              <span style="width:34px">${faNum(st)} ستاره</span>
+              <span style="flex:1;height:6px;background:var(--blue-50);border-radius:99px;overflow:hidden">
+                <span style="display:block;height:100%;width:${pct}%;background:var(--star);border-radius:99px"></span>
+              </span>
+              <span style="width:38px;text-align:left">${faNum(pct)}٪</span>
+            </div>`;
+          }).join('')}
+        </div>` : ''}`;
+
+      document.getElementById('reviewList').innerHTML = list.length
+        ? list.map(rv => `
+          <div class="review">
+            <div class="review__top">
+              <span class="review__avatar">${esc((rv.name || '?').trim().charAt(0))}</span>
+              <div>
+                <div class="review__name">${esc(rv.name || 'خریدار')}</div>
+                <div class="review__stars">${starsHtml(rv.stars, 'sm')}</div>
+              </div>
+              <span class="review__date">${faDateShort(rv.date)}</span>
+            </div>
+            ${rv.text ? '<p class="review__text">' + esc(rv.text) + '</p>' : ''}
+          </div>`).join('')
+        : '<div class="empty" style="padding:40px 20px"><h3>هنوز نظری ثبت نشده</h3><p>اگر این محصول را خریده‌اید، تجربه‌تان را بنویسید.</p></div>';
+
+      renderReviewForm();
+    }
+
+    function renderReviewForm() {
+      const sess = Store.session();
+      const box = document.getElementById('reviewFormInner');
+
+      if (!sess) {
+        box.innerHTML = `
+          <p style="font-size:13px;color:var(--ink-soft);line-height:2;margin-bottom:16px">
+            برای ثبت امتیاز و نظر، ابتدا وارد حساب کاربری خود شوید.
+          </p>
+          <a href="account.html?next=${encodeURIComponent('product.html?id=' + p.id)}" class="btn btn--block">${ui('user')} ورود / ثبت‌نام</a>`;
+        return;
+      }
+
+      box.innerHTML = `
+        <div class="field">
+          <label>امتیاز شما <span class="req">*</span></label>
+          <div class="star-pick star-pick--lg" id="starPick">
+            ${[1,2,3,4,5].map(i => '<button type="button" data-star="' + i + '" aria-label="' + i + ' ستاره">' + icon('star') + '</button>').join('')}
+          </div>
+          <div class="field__hint" id="starHint">روی ستاره‌ها کلیک کنید</div>
+        </div>
+        <div class="field">
+          <label for="rvText">نظر شما</label>
+          <textarea id="rvText" placeholder="کیفیت، نصب، ارسال یا هر نکته‌ای که برای دیگران مفید است."></textarea>
+        </div>
+        <button class="btn btn--block" id="rvSubmit">ثبت نظر</button>`;
+
+      let picked = 0;
+      const pick = box.querySelector('#starPick');
+      const hint = box.querySelector('#starHint');
+      const labels = ['', 'خیلی ضعیف', 'ضعیف', 'متوسط', 'خوب', 'عالی'];
+      pick.querySelectorAll('[data-star]').forEach(b => {
+        b.onclick = () => {
+          picked = Number(b.dataset.star);
+          pick.querySelectorAll('[data-star]').forEach(x => {
+            x.classList.toggle('is-on', Number(x.dataset.star) <= picked);
+          });
+          hint.textContent = labels[picked] + ' — ' + faNum(picked) + ' از ۵';
+          hint.style.color = 'var(--blue-600)';
+        };
+      });
+
+      box.querySelector('#rvSubmit').onclick = () => {
+        if (!picked) { toast('اول امتیاز خود را انتخاب کنید', 'err'); return; }
+        const text = box.querySelector('#rvText').value.trim();
+        Store.addReview({
+          pid: p.id,
+          userId: sess.id,
+          name: sess.name || 'خریدار',
+          stars: picked,
+          text: text
+        });
+        toast('ممنون! نظر شما ثبت شد');
+        renderReviews();
+        // امتیاز بالای صفحه را هم به‌روز کن
+        const r2 = Store.rating(p.id);
+        const badge = document.querySelector('.rate-badge');
+        if (badge) badge.outerHTML = `<a href="#reviewsSection" class="rate-badge">${starsHtml(r2.avg)}<b>${faNum(r2.avg.toFixed(1))}</b><span>${faNum(r2.percent)}٪ رضایت از ${faNum(r2.count)} نظر</span></a>`;
+      };
+    }
+  }
+</script>
+</body>
+</html>
